@@ -12,7 +12,8 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
                     nullable: false
-                    autoIncrement: true
+                  autoIncrement: true
+                  incrementBy: 1
               - column:
                   name: user_id
                   type: bigint
