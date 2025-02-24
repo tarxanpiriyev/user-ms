@@ -8,6 +8,7 @@ import com.freelance_platform.user_ms.repository.RoleRepository;
 import com.freelance_platform.user_ms.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -17,7 +18,9 @@ import java.util.HashSet;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder bCryptPasswordEncoder;
 
+    @Override
     public UserResponseDto getUserById(Long userId) {
         var user = userRepository.findById(userId).
                 orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
@@ -25,7 +28,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public UserResponseDto getUserByEmail(String email) {
-        var user = userRepository.findByEmail(email).
+        var user = userRepository.findByEmailIgnoreCase(email).
                 orElseThrow(() -> new EntityNotFoundException("User not found with email: " + email));
         return new UserResponseDto(user.getFullName(), user.getEmail());
     }
@@ -34,7 +37,7 @@ public class UserServiceImpl implements UserService {
         var user = User.builder()
                 .fullName(userRegisterDto.getFullName())
                 .email(userRegisterDto.getEmail())
-                .password(userRegisterDto.getPassword())
+                .password(bCryptPasswordEncoder.encode(userRegisterDto.getPassword()))
                 .roles(new HashSet<>())
                 .build();
 
@@ -52,7 +55,7 @@ public class UserServiceImpl implements UserService {
 //    }
 
     public void deleteUserByEmail(String email) {
-        var user = userRepository.findByEmail(email).
+        var user = userRepository.findByEmailIgnoreCase(email).
                 orElseThrow(() -> new EntityNotFoundException("User not found with email: " + email));
         userRepository.delete(user);
     }
