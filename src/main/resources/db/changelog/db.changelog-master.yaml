@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - includeAll:
+      path: db/changelog/tbl-users
+  - includeAll:
+      path: db/changelog/tbl-roles
+  - includeAll:
+      path: db/changelog/tbl-user-roles
+  
