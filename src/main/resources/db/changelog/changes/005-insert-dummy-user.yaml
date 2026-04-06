@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-insert-dummy-user
+      author: system
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  value: "550e8400-e29b-41d4-a716-446655440000"
+              - column:
+                  name: full_name
+                  value: "Demo User"
+              - column:
+                  name: email
+                  value: "user@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$xvOhs5i5inm3dhCiLt6Yxe4SN.CISteBt5QTBpj..qInDdhgLxUnW"
+              - column:
+                  name: status
+                  value: "ACTIVE"
+              - column:
+                  name: email_verified
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueDate: now()
+              - column:
+                  name: updated_at
+                  valueDate: now()
+        - sql:
+            sql: >
+              INSERT INTO user_roles (user_id, role_id)
+              SELECT u.id, r.id
+              FROM users u, roles r
+              WHERE u.email = 'user@example.com' AND r.name = 'USER';

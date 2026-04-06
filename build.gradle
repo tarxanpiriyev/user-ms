@@ -4,7 +4,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com.freelance-platform'
+group = 'az'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -31,18 +31,28 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
 	implementation "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
 	implementation "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 	implementation 'org.liquibase:liquibase-core'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.testcontainers:testcontainers:1.20.4'
+	testImplementation 'org.testcontainers:postgresql:1.20.4'
+	testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('bootJar') {
+	archiveFileName = 'app.jar'
 }
