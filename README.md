@@ -1,93 +1,342 @@
-# user-ms
+# User Microservice - Authentication & User Management
 
+Production-grade Spring Boot microservice for user authentication and management in the e-zamin P2P escrow platform. Provides JWT-based authentication with role support,compatible with deal-ms OAuth2 resource server.
 
+## Features
 
-## Getting started
+### Core Capabilities
+- **User Registration** - Create new user accounts with email validation
+- **JWT Authentication** - Secure token-based authentication
+- **Role-Based Access Control** - USER and ADMIN roles
+- **Profile Management** - Update user profiles and change passwords
+- **Deal-ms Integration** - JWT tokens include roles claim for seamless integration
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Technical Features
+- **UUID Primary Keys** - For enhanced security and distributed system compatibility
+- **Audit Trail** - CreatedAt and UpdatedAt timestamps on all entities
+- **Optimistic Locking** - Version column prevents concurrent modification conflicts
+- **Password Encryption** - BCrypt password hashing
+- **Input Validation** - Comprehensive DTO validation
+- **Exception Handling** - RFC 7807 Problem Details
+- **API Documentation** - OpenAPI/Swagger UI
+- **Health Checks** - Spring Boot Actuator
+- **Database Migrations** - Liquibase for schema versioning
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Technology Stack
 
-## Add your files
+- **Java 21**
+- **Spring Boot 3.4.3**
+- **PostgreSQL 16**
+- **JJWT 0.12.6** (JWT library)
+- **Liquibase** (database migrations)
+- **Gradle** (build tool)
+- **Docker** (containerization)
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Prerequisites
 
+- JDK 21+
+- PostgreSQL 16+ (or use Docker Compose)
+- Gradle 8+ (or use included wrapper)
+- Docker & Docker Compose (optional, for containerized setup)
+
+## Quick Start
+
+### Using Docker Compose (Recommended)
+
+```bash
+# Build the application
+./gradlew clean build
+
+# Start PostgreSQL and user-ms
+docker-compose up -d
+
+# View logs
+docker-compose logs -f user-ms
+
+# Access Swagger UI
+open http://localhost:8081/swagger-ui.html
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/freelance-platform1/user-ms.git
-git branch -M main
-git push -uf origin main
+
+### Local Development
+
+```bash
+# Start PostgreSQL
+docker run -d \
+  --name user-postgres \
+  -e POSTGRES_DB=user_db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 5432:5432 \
+  postgres:16-alpine
+
+# Set environment variables
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=user_db
+export DB_USER=postgres
+export DB_PASSWORD=postgres
+export JWT_SECRET=change-this-secret-key-in-production-it-must-be-at-least-32-characters-long
+export JWT_ISSUER=http://localhost:8081
+
+# Run the application
+./gradlew bootRun
 ```
 
-## Integrate with your tools
+## Configuration
 
-- [ ] [Set up project integrations](https://gitlab.com/freelance-platform1/user-ms/-/settings/integrations)
+Key configuration options in `application.yaml`:
 
-## Collaborate with your team
+```yaml
+jwt:
+  secret: ${JWT_SECRET}                    # JWT signing secret (min 32 chars)
+  access-token-expiry-minutes: 60          # Access token expiry (default 1 hour)
+  refresh-token-expiry-minutes: 1440       # Refresh token expiry (default 24 hours)
+  issuer: http://localhost:8081            # JWT issuer URI
+  audience: deal-ms                         # JWT audience (for deal-ms)
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+## API Endpoints
 
-## Test and Deploy
+### Public Endpoints
 
-Use the built-in continuous integration in GitLab.
+#### Register
+```bash
+POST /auth/register
+Content-Type: application/json
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+{
+  "fullName": "John Doe",
+  "email": "john.doe@example.com",
+  "password": "SecurePassword123"
+}
+```
 
-***
+Response:
+```json
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "john.doe@example.com",
+  "fullName": "John Doe",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600
+}
+```
 
-# Editing this README
+#### Login
+```bash
+POST /auth/login
+Content-Type: application/json
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+{
+  "email": "john.doe@example.com",
+  "password": "SecurePassword123"
+}
+```
 
-## Suggestions for a good README
+### Protected Endpoints (Require JWT)
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+#### Get Current User Profile
+```bash
+GET /users/me
+Authorization: Bearer {accessToken}
+```
 
-## Name
-Choose a self-explaining name for your project.
+Response:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "fullName": "John Doe",
+  "email": "john.doe@example.com",
+  "status": "ACTIVE",
+  "emailVerified": false,
+  "roles": ["USER"],
+  "createdAt": "2026-01-30T07:30:00Z",
+  "updatedAt": "2026-01-30T07:30:00Z"
+}
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+#### Get User by ID
+```bash
+GET /users/{userId}
+Authorization: Bearer {accessToken}
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+#### Update Profile
+```bash
+PUT /users/me/profile
+Authorization: Bearer {accessToken}
+Content-Type: application/json
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+{
+  "fullName": "John Smith"
+}
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+#### Change Password
+```bash
+POST /users/me/change-password
+Authorization: Bearer {accessToken}
+Content-Type: application/json
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+{
+  "currentPassword": "SecurePassword123",
+  "newPassword": "NewSecurePassword456"
+}
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## JWT Token Format
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Tokens include the following claims for deal-ms compatibility:
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```json
+{
+  "sub": "user-email@example.com",
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "roles": ["USER", "ADMIN"],
+  "iss": "http://localhost:8081",
+  "aud": "deal-ms",
+  "iat": 1706600000,
+  "exp": 1706603600
+}
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+The **roles** claim is an array that deal-ms SecurityConfig reads to authorize requests.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Database Schema
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+**3 Tables:**
+
+1. **users** - User accounts (UUID id, email, password, status, audit fields)
+2. **roles** - Available roles (UUID id, name, description, audit fields)
+3. **user_roles** - Many-to-many junction table
+
+**Key Constraints:**
+- Unique email on users
+- Unique role name on roles
+- Composite primary key on user_roles
+
+## Security
+
+### Password Requirements
+- Minimum 8 characters
+- BCrypt encryption
+
+### JWT Security
+- SHA-256 hashed secret key
+- Configurable expiry times
+- Bearer token authentication
+- Stateless sessions
+
+### CORS Configuration
+Allows requests from:
+- http://localhost:3000 (frontend)
+- http://localhost:8080 (services)
+- http://localhost:8082 (deal-ms)
+
+## Integration with deal-ms
+
+The user-ms generates JWT tokens that deal-ms can validate:
+
+1. **deal-ms configuration** (`application.yaml`):
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081
+```
+
+2. **deal-ms extracts roles** from the `roles` claim in `SecurityConfig`:
+```java
+private Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter() {
+    return jwt -> {
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        // ... converts to authorities
+    };
+}
+```
+
+3. **User flow**:
+   - User registers/logs in to user-ms → receives JWT
+   - User calls deal-ms with JWT in Authorization header
+   - deal-ms validates JWT and extracts userId & roles
+   - deal-ms authorizes based on roles
+
+## Health Check
+
+```bash
+curl http://localhost:8081/actuator/health
+```
+
+## API Documentation
+
+Access interactive API documentation:
+- **Swagger UI**: http://localhost:8081/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8081/v3/api-docs
+
+## Testing
+
+```bash
+# Run all tests
+./gradlew test
+
+# Run with Testcontainers
+./gradlew integrationTest
+
+# Run specific test class
+./gradlew test --tests "az.user_ms.service.UserServiceTest"
+```
+
+## Troubleshooting
+
+### Database Connection Issues
+```bash
+# Check PostgreSQL is running
+docker ps | grep postgres
+
+# View PostgreSQL logs
+docker logs user-ms-postgres
+
+# Connect to database
+psql -h localhost -U postgres -d user_db
+```
+
+### JWT Issues
+- Ensure `JWT_SECRET` is at least 32 characters
+- Check token expiry times
+- Verify deal-ms uses correct issuer URI
+
+### Application Logs
+```bash
+# View user-ms logs
+docker logs user-ms -f
+
+# Local development logs
+./gradlew bootRun --info
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SERVER_PORT` | Application port | 8081 |
+| `DB_HOST` | Database host | localhost |
+| `DB_PORT` | Database port | 5432 |
+| `DB_NAME` | Database name | user_db |
+| `DB_USER` | Database user | postgres |
+| `DB_PASSWORD` | Database password | postgres |
+| `JWT_SECRET` | JWT signing secret | (required) |
+| `JWT_ACCESS_EXPIRY` | Access token expiry (minutes) | 60 |
+| `JWT_REFRESH_EXPIRY` | Refresh token expiry (minutes) | 1440 |
+| `JWT_ISSUER` | JWT issuer URI | http://localhost:8081 |
+| `JWT_AUDIENCE` | JWT audience | deal-ms |
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Proprietary - All rights reserved
+
+## Support
+
+For issues or questions, please contact the development team.
